@@ -33,6 +33,8 @@ func main() {
 		log.Panic(err)
 	}
 
+	interval := time.Minute * 5
+
 	for {
 		log.Printf("Searching for courses...")
 		courses, err := c.Search(filter)
@@ -53,11 +55,9 @@ func main() {
 
 		last = courses
 
-		dur := time.Minute * 5
-		log.Printf("Sleeping for %.0f minutes...", dur.Minutes())
-		time.Sleep(dur)
+		log.Printf("Sleeping for %.0f minutes...", interval.Minutes())
+		time.Sleep(interval)
 	}
-
 }
 
 func embed(course cvc.Course, searchURL string) discord.Embed {
@@ -86,7 +86,7 @@ func embed(course cvc.Course, searchURL string) discord.Embed {
 			},
 		},
 		Footer: &discord.EmbedFooter{
-			IconURL: "https://github.com/saucesteals/cvcmonitor/blob/main/assets/logo.png",
+			IconURL: "https://github.com/saucesteals/cvcmonitor/blob/main/assets/logo.png?raw=true",
 			Text:    "CVC Exchange - https://github.com/saucesteals/cvcmonitor",
 		},
 		Color: 0xffc92a,
