@@ -11,19 +11,13 @@ import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/webhook"
 	"github.com/joho/godotenv"
-	"github.com/pasztorpisti/qs"
 	"github.com/saucesteals/cvcmonitor/cvc"
 )
 
 var (
-	hook     webhook.Client
-	searches []Search
+	hook    webhook.Client
+	queries []url.Values
 )
-
-type Search struct {
-	SearchURL string
-	Filters   cvc.Filter
-}
 
 func init() {
 	godotenv.Load()
@@ -34,7 +28,7 @@ func init() {
 		log.Panic(err)
 	}
 
-	searches, err = getSearches()
+	queries, err = getSearches()
 	if err != nil {
 		log.Panic(err)
 	}
@@ -43,35 +37,29 @@ func init() {
 func main() {
 	godotenv.Load()
 
-	for _, search := range searches {
-		go watch(search)
+	for _, query := range queries {
+		go watch(query)
 	}
 
 	select {}
 }
 
-func watch(search Search) {
-	query := search.Filters.Subject
-	if query == "" {
-		query = search.Filters.Query
+func watch(query url.Values) {
+	name := query.Get("filter[query]")
+	if name == "" {
+		name = query.Get("filter[subject]")
 	}
 
-	log := log.New(os.Stdout, fmt.Sprintf("- [%s] - ", query), log.Ltime|log.Lmsgprefix)
+	log := log.New(os.Stdout, fmt.Sprintf("- [%s] - ", name), log.Ltime|log.Lmsgprefix)
 
 	c := cvc.NewClient()
 
-	log.Println("Performing initial search...")
-	last, err := c.Search(search.Filters)
-	if err != nil {
-		log.Panic(err)
-	}
-	log.Println("Initial search complete")
-
+	var last []cvc.Course
 	interval := time.Minute * 5
 
 	for {
 		log.Printf("Searching for courses...")
-		courses, err := c.Search(search.Filters)
+		courses, err := c.Search(query)
 		if err != nil {
 			log.Println(err)
 			continue
@@ -79,7 +67,7 @@ func watch(search Search) {
 
 		for _, course := range courses {
 			if !hasCourse(last, course) {
-				_, err := hook.CreateEmbeds([]discord.Embed{embed(course, search.SearchURL)})
+				_, err := hook.CreateEmbeds([]discord.Embed{embed(course, query)})
 				if err != nil {
 					log.Println(err)
 					continue
@@ -94,7 +82,7 @@ func watch(search Search) {
 	}
 }
 
-func embed(course cvc.Course, searchURL string) discord.Embed {
+func embed(course cvc.Course, query url.Values) discord.Embed {
 	inline := true
 	t := time.Now()
 	return discord.Embed{
@@ -102,7 +90,7 @@ func embed(course cvc.Course, searchURL string) discord.Embed {
 		URL:   course.Link,
 		Author: &discord.EmbedAuthor{
 			Name:    "CVC Exchange",
-			URL:     searchURL,
+			URL:     fmt.Sprintf("https://search.cvc.edu/search?%s", query.Encode()),
 			IconURL: "https://github.com/saucesteals/cvcmonitor/blob/main/assets/logo.png?raw=true",
 		},
 		Fields: []discord.EmbedField{
@@ -137,7 +125,7 @@ func hasCourse(courses []cvc.Course, course cvc.Course) bool {
 	return false
 }
 
-func getSearches() ([]Search, error) {
+func getSearches() ([]url.Values, error) {
 	name := "SEARCH_URL"
 
 	searchUrls := os.Getenv(name)
@@ -146,23 +134,15 @@ func getSearches() ([]Search, error) {
 		return nil, fmt.Errorf("%s is empty", name)
 	}
 
-	var filters []Search
+	var queries []url.Values
 	for _, searchUrl := range strings.Split(searchUrls, ",") {
 		u, err := url.Parse(searchUrl)
 		if err != nil {
 			return nil, err
 		}
 
-		var filter cvc.Filter
-		if err := qs.UnmarshalValues(&filter, u.Query()); err != nil {
-			return nil, err
-		}
-
-		filters = append(filters, Search{
-			SearchURL: searchUrl,
-			Filters:   filter,
-		})
+		queries = append(queries, u.Query())
 	}
 
-	return filters, nil
+	return queries, nil
 }

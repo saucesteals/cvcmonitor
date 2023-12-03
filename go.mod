@@ -6,7 +6,6 @@ require (
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/disgoorg/disgo v0.17.0
 	github.com/joho/godotenv v1.5.1
-	github.com/pasztorpisti/qs v0.0.0-20171216220353-8d6c33ee906c
 )
 
 require (

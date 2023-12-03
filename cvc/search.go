@@ -3,55 +3,23 @@ package cvc
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/pasztorpisti/qs"
 )
 
-type Filter struct {
-	DisplayHomeSchool      bool     `qs:"filter[display_home_school]" json:"display_home_school"`
-	SearchAllUniversities  bool     `qs:"filter[search_all_universities]" json:"search_all_universities"`
-	UniversityID           int      `qs:"filter[university_id]" json:"university_id"`
-	SearchType             string   `qs:"filter[search_type]" json:"search_type"`
-	Query                  string   `qs:"filter[query]" json:"query"`
-	Subject                string   `qs:"filter[subject]" json:"subject"`
-	OeiPhase2Filter        []bool   `qs:"filter[oei_phase_2_filter]" json:"oei_phase_2_filter"`
-	ShowOnlyAvailable      []bool   `qs:"filter[show_only_available]" json:"show_only_available"`
-	DeliveryMethods        []string `qs:"filter[delivery_methods][]" json:"delivery_methods"`
-	DeliveryMethodSubtypes []string `qs:"filter[delivery_method_subtypes][]" json:"delivery_method_subtypes"`
-	Prerequisites          []string `qs:"filter[prerequisites][]" json:"prerequisites"`
-	SessionNames           []string `qs:"filter[session_names][]" json:"session_names"`
-	ZeroTextbookCostFilter bool     `qs:"filter[zero_textbook_cost_filter]" json:"zero_textbook_cost_filter"`
-	StartDate              string   `qs:"filter[start_date]" json:"start_date"`
-	EndDate                string   `qs:"filter[end_date]" json:"end_date"`
-	TargetSchoolIDs        []string `qs:"filter[target_school_ids][]" json:"target_school_ids"`
-	MinCreditsRange        int      `qs:"filter[min_credits_range]" json:"min_credits_range"`
-	MaxCreditsRange        int      `qs:"filter[max_credits_range]" json:"max_credits_range"`
-	Sort                   string   `qs:"filter[sort]" json:"sort"`
-}
-
-type searchRequest struct {
-	Filter
-	Page        int    `qs:"page"`
-	RandomToken string `qs:"random_token"`
-}
-
-func (c *Client) Search(filter Filter) ([]Course, error) {
+func (c *Client) Search(query url.Values) ([]Course, error) {
 	req, err := http.NewRequest(http.MethodGet, "https://search.cvc.edu/search", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	query, err := qs.Marshal(searchRequest{
-		Filter: filter,
-		Page:   1,
-	})
 	if err != nil {
 		return nil, err
 	}
 
-	req.URL.RawQuery = query
+	req.URL.RawQuery = query.Encode()
 
 	res, err := c.do(req)
 	if err != nil {
