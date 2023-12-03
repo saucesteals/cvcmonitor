@@ -3,6 +3,7 @@
 <img src="./assets/logo.png" alt="logo" height="100px" />
 <h1 align="center">CVC Monitor</h1>
 <h3>Monitor for available classes at the CVC Exchange</h3>
+<img src="./assets/example.png" alt="logo" height="200px" />
 </div>
 
 ---
