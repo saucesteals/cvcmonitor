@@ -1,6 +1,7 @@
 package cvc
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -10,8 +11,10 @@ import (
 
 type Filter struct {
 	DisplayHomeSchool      bool     `qs:"filter[display_home_school]" json:"display_home_school"`
+	SearchAllUniversities  bool     `qs:"filter[search_all_universities]" json:"search_all_universities"`
 	UniversityID           int      `qs:"filter[university_id]" json:"university_id"`
 	SearchType             string   `qs:"filter[search_type]" json:"search_type"`
+	Query                  string   `qs:"filter[query]" json:"query"`
 	Subject                string   `qs:"filter[subject]" json:"subject"`
 	OeiPhase2Filter        []bool   `qs:"filter[oei_phase_2_filter]" json:"oei_phase_2_filter"`
 	ShowOnlyAvailable      []bool   `qs:"filter[show_only_available]" json:"show_only_available"`
@@ -25,6 +28,7 @@ type Filter struct {
 	TargetSchoolIDs        []string `qs:"filter[target_school_ids][]" json:"target_school_ids"`
 	MinCreditsRange        int      `qs:"filter[min_credits_range]" json:"min_credits_range"`
 	MaxCreditsRange        int      `qs:"filter[max_credits_range]" json:"max_credits_range"`
+	Sort                   string   `qs:"filter[sort]" json:"sort"`
 }
 
 type searchRequest struct {
@@ -64,7 +68,7 @@ func (c *Client) Search(filter Filter) ([]Course, error) {
 
 	document.Find("#search-results .course").Each(func(i int, s *goquery.Selection) {
 		college := s.Find(`.course-head .text-sm`).Text()
-		name := s.Find(`.course-details-link`).Text()
+		nameSelection := s.Find(`.course-details-link`)
 		units := s.Find(`.credit > p`).Text()
 		term := s.Find(`.term > p`).Text()
 
@@ -78,10 +82,11 @@ func (c *Client) Search(filter Filter) ([]Course, error) {
 
 		courses = append(courses, Course{
 			College: strings.TrimSpace(college),
-			Name:    strings.TrimSpace(name),
+			Name:    strings.TrimSpace(nameSelection.Text()),
 			Units:   strings.TrimSpace(units),
 			Term:    strings.TrimSpace(term),
 			Cost:    strings.TrimSpace(cost),
+			Link:    fmt.Sprintf("https://search.cvc.edu%s", nameSelection.AttrOr("href", "")),
 		})
 	})
 
@@ -94,4 +99,5 @@ type Course struct {
 	Units   string
 	Term    string
 	Cost    string
+	Link    string
 }
