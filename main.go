@@ -54,12 +54,19 @@ func watch(query url.Values) {
 
 	c := cvc.NewClient()
 
-	var last []cvc.Course
+	last, err := c.SearchAll(query)
+	if err != nil {
+		log.Panic(err)
+	}
+
 	interval := time.Minute * 5
 
 	for {
+		log.Printf("Sleeping for %.0f minutes...", interval.Minutes())
+		time.Sleep(interval)
+
 		log.Printf("Searching for courses...")
-		courses, err := c.Search(query)
+		courses, err := c.SearchAll(query)
 		if err != nil {
 			log.Println(err)
 			continue
@@ -76,9 +83,6 @@ func watch(query url.Values) {
 		}
 
 		last = courses
-
-		log.Printf("Sleeping for %.0f minutes...", interval.Minutes())
-		time.Sleep(interval)
 	}
 }
 

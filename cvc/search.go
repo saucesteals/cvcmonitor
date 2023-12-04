@@ -9,27 +9,50 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func (c *Client) Search(query url.Values) ([]Course, error) {
+func (c *Client) SearchAll(query url.Values) ([]Course, error) {
+	var courses []Course
+
+	page := 1
+	for {
+		results, hasNext, err := c.Search(query, page)
+		if err != nil {
+			return nil, err
+		}
+
+		courses = append(courses, results...)
+
+		if !hasNext {
+			break
+		}
+
+		page++
+	}
+
+	return courses, nil
+}
+
+func (c *Client) Search(query url.Values, page int) ([]Course, bool, error) {
 	req, err := http.NewRequest(http.MethodGet, "https://search.cvc.edu/search", nil)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
+	query.Set("page", fmt.Sprintf("%d", page))
 	req.URL.RawQuery = query.Encode()
 
 	res, err := c.do(req)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	defer res.Body.Close()
 
 	document, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	var courses []Course
@@ -58,7 +81,7 @@ func (c *Client) Search(query url.Values) ([]Course, error) {
 		})
 	})
 
-	return courses, nil
+	return courses, !document.Find(".next").HasClass("disabled"), nil
 }
 
 type Course struct {
