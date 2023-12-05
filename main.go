@@ -54,6 +54,7 @@ func watch(query url.Values) {
 
 	c := cvc.NewClient()
 
+	log.Println("Searching for courses...")
 	last, err := c.SearchAll(query)
 	if err != nil {
 		log.Panic(err)
