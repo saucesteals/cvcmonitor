@@ -81,7 +81,12 @@ func (c *Client) Search(query url.Values, page int) ([]Course, bool, error) {
 		})
 	})
 
-	return courses, !document.Find(".next").HasClass("disabled"), nil
+	next := document.Find(".next")
+	if next.Length() == 0 {
+		return courses, false, nil
+	}
+
+	return courses, !next.HasClass("disabled"), nil
 }
 
 type Course struct {
