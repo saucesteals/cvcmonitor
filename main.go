@@ -35,8 +35,6 @@ func init() {
 }
 
 func main() {
-	godotenv.Load()
-
 	for _, query := range queries {
 		go watch(query)
 	}
