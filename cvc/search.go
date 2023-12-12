@@ -37,10 +37,6 @@ func (c *Client) Search(query url.Values, page int) ([]Course, bool, error) {
 		return nil, false, err
 	}
 
-	if err != nil {
-		return nil, false, err
-	}
-
 	query.Set("page", fmt.Sprintf("%d", page))
 	req.URL.RawQuery = query.Encode()
 
